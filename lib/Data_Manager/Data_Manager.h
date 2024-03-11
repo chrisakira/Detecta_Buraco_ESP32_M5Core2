@@ -7,20 +7,19 @@ typedef struct
 {
   volatile double value = 0;
   volatile char measurement[10] = {""};
-  volatile uint_least64_t timeStamp = 0;
+  volatile uint_least16_t time_stamp = 0;
 } data;
 
-std::vector<data*> Data;
+std::vector<data *> Data;
 
 class Data_Manager
 {
 public:
-    Data_Manager()
-    {
-    }
+  Data_Manager()
+  {
+  }
 
-    ~Data_Manager() {}
+  ~Data_Manager() {}
 
-private: 
-
+private:
 };
