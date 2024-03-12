@@ -3,60 +3,38 @@
 #include <Arduino.h>
 #include <vector>
 #include <cstdint>
-#include "Data_Manager.h"
-#include "driver/gpio.h"  
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/queue.h"
-#include "freertos/semphr.h"
+#include "driver/gpio.h"
+#include "SdFat.h"
 
-class Collector_manager
+#include "Data_Manager.h"
+#include "XQueue_Manager.h"
+#include "Logger_Manager.h"
+#include "M5_Manager.h"
+
+
+class Collector_Manager
 {
 public:
-    Collector_manager()
-    {
-    }
+    Collector_Manager(  Data_Manager* data_manager_ptr = NULL, 
+                        XQueue_Manager* xqueue_manager_ptr = NULL, 
+                        Logger_Manager* logger_manager_ptr = NULL,
+                        M5_Manager* m5_manager_ptr = NULL): 
+                        data_manager_ptr(data_manager_ptr), 
+                        xqueue_manager_ptr(xqueue_manager_ptr), 
+                        logger_manager_ptr(logger_manager_ptr),
+                        m5_manager_ptr(m5_manager_ptr) {}
 
-    ~Collector_manager() {}
+    ~Collector_Manager() {}
 
-    bool first_read = true;
-    uint64_t timer_now = 0;
-    uint64_t timer_previous = 0;
-    volatile double value = 0;
-    volatile char measurement[10] = {""};
-    volatile uint_least64_t time_stamp = 0;
-    data TMP;
-    void read_mode1()
-    { 
-        if (this->first_read)
-        {
-            this->first_read = false;
+    void collector_thread(void *z);
 
-            this->TMP.value = 32;
-            memccpy((void *)this->TMP.measurement, "Dado 1", sizeof("Dado 1"));
-            
-            this->timer_now = esp_timer_get_time();
-            this->TMP.time_stamp = 0;
-            this->timer_previous = timer_now;
-        }
-        else
-        {
-            
-            this->TMP.value = 32;
-            memccpy((void *)this->TMP.measurement, "Dado 1", sizeof("Dado 1"));
-            
-            this->timer_now = esp_timer_get_time();
-            this->TMP.time_stamp = timer_now - timer_previous;
-            this->timer_previous = timer_now;
-            
-        }
-        xQueueSend(this->xQueue, &TMP, portMAX_DELAY); 
-    }
 
-private:
-    QueueHandle_t xQueue;
-    SemaphoreHandle_t Key;
-    uint32_t NLeituras = 5000;
-    unsigned long long readings = 0;
-    unsigned long repeticoes = 1;
+private: 
+    M5_Manager* m5_manager_ptr;
+    Logger_Manager* logger_manager_ptr;
+    Data_Manager* data_manager_ptr;
+    XQueue_Manager* xqueue_manager_ptr;
 };

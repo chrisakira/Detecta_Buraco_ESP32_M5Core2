@@ -3,14 +3,16 @@
 #include <Arduino.h>
 #include <vector>
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 typedef struct
 {
-  volatile double value = 0;
-  volatile char measurement[10] = {""};
-  volatile uint_least16_t time_stamp = 0;
-} data;
+  volatile float value               = 0;
+  volatile uint_least8_t measurement = 0;
+  volatile uint_least64_t time_stamp = 0;
+} Data;
 
-std::vector<data *> Data;
 
 class Data_Manager
 {
@@ -20,6 +22,7 @@ public:
   }
 
   ~Data_Manager() {}
-
+  
+  std::vector<Data *> data;
 private:
 };
