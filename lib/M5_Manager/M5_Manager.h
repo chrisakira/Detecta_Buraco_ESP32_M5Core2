@@ -3,29 +3,29 @@
 #include <Arduino.h>
 #include <M5Core2.h>
 
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "Logger_Manager.h"
 class M5_Manager {
 public:
-    M5_Manager( bool LCDEnable = true, bool SDEnable = true, bool SerialEnable = true, 
-                bool I2CEnable = true, mbus_mode_t mode = kMBusModeOutput, bool SpeakerEnable = false){
-        M5.begin(LCDEnable, SDEnable, SerialEnable, I2CEnable, mode, SpeakerEnable);
-        this->initialize_LCD();
-        
-        xTaskCreate([](void* z) {
-            static_cast<M5_Manager*>(z)->update_mpu_data(z);
-        }, "Update the MPU data", 10000, this, 1, &update_mpu_data_task_handle);
-    }
+    M5_Manager(Logger_Manager *logger_manager_ptr): logger_manager_ptr(logger_manager_ptr){}
 
     ~M5_Manager(){}
+
+    void M5_begin(bool LCDEnable = true, bool SDEnable = true, bool SerialEnable = true, bool I2CEnable = true);
+    
+    bool check_LCD();
 
     bool initialize_LCD();
 
     bool reset_LCD();
     
+    bool create_tasks();
+
     void update_mpu_data(void *z);
+    
+    void write_mpu_data(void *z);
     
     
 
@@ -43,6 +43,8 @@ public:
 
     float temperature = 0.0F;
 private:
-
+    Logger_Manager *logger_manager_ptr = NULL;
+    bool lcd_initialized = false;
+    bool is_task_created = false;
     TaskHandle_t update_mpu_data_task_handle;
 };

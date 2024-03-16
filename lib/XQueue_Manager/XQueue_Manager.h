@@ -13,21 +13,24 @@
 class XQueue_Manager
 {
 public:
-  XQueue_Manager(String queue_name = "Default"): queue_name(queue_name) {}
+  XQueue_Manager(String queue_name = "Default"): queue_name(queue_name) {
+    xQueue = xQueueCreate(10, sizeof(Data));
+  }
 
   ~XQueue_Manager() {
   }
   
   QueueHandle_t* get_queue_ptr();
 
-  int receive_data(Data *data);
+  BaseType_t receive_data(Data *data);
 
-  bool send_data(Data* data);
+  BaseType_t send_data(Data* data);
 
   String get_queue_name() {
     return this->queue_name;
   }
+  
+  QueueHandle_t xQueue;
 private:
   String queue_name = "Default";
-  QueueHandle_t xQueue;
 };

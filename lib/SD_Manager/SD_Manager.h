@@ -18,15 +18,18 @@
 class SD_Manager
 {
 public:
-    SD_Manager(Data_Manager* data_manager_ptr = NULL, XQueue_Manager* xqueue_manager_ptr = NULL, Logger_Manager* logger_manager_ptr = NULL): 
-    data_manager_ptr(data_manager_ptr), xqueue_manager_ptr(xqueue_manager_ptr), logger_manager_ptr(logger_manager_ptr) {
+    SD_Manager( Data_Manager* data_manager_ptr = NULL, 
+                XQueue_Manager* xqueue_manager_ptr = NULL, 
+                Logger_Manager* logger_manager_ptr = NULL): 
+                data_manager_ptr(data_manager_ptr), 
+                xqueue_manager_ptr(xqueue_manager_ptr), 
+                logger_manager_ptr(logger_manager_ptr) {
         this->xMutex = xSemaphoreCreateMutex();
-        this->create_tasks();
     }
 
     ~SD_Manager() {}
 
-    void create_tasks();
+    bool create_tasks();
 
     void double_to_uint8_array(double value, uint8_t* array);
     
@@ -37,6 +40,7 @@ public:
     void write_data_buffer(void *z);
     
 private: 
+    bool is_task_created = false;
     Logger_Manager* logger_manager_ptr;
     XQueue_Manager* xqueue_manager_ptr;
     Data_Manager* data_manager_ptr;

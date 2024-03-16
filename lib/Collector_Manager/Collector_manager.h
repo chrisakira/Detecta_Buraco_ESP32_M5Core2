@@ -29,12 +29,20 @@ public:
 
     ~Collector_Manager() {}
 
+    bool create_task();
+
     void collector_thread(void *z);
 
 
 private: 
+    
     M5_Manager* m5_manager_ptr;
     Logger_Manager* logger_manager_ptr;
     Data_Manager* data_manager_ptr;
     XQueue_Manager* xqueue_manager_ptr;
+
+    
+    bool is_task_created = false;
+    TaskHandle_t collector_task_handler;
+
 };
