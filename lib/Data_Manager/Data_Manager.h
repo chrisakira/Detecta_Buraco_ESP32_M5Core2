@@ -8,9 +8,9 @@
 
 typedef struct
 {
-  volatile float value               = 0;
-  volatile uint_least8_t measurement = 0;
-  volatile uint_least64_t time_stamp = 0;
+  volatile float value              = 0;
+  volatile int measurement          = 0;
+  volatile uint_fast64_t time_stamp = 0;
 } Data;
 
 

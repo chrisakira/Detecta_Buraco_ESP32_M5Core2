@@ -14,7 +14,7 @@ class XQueue_Manager
 {
 public:
   XQueue_Manager(String queue_name = "Default"): queue_name(queue_name) {
-    xQueue = xQueueCreate(10, sizeof(Data));
+    xQueue = xQueueCreate(100, sizeof(Data));
   }
 
   ~XQueue_Manager() {

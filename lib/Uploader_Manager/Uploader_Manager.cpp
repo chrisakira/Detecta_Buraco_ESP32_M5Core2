@@ -1,43 +1,122 @@
 #include <Uploader_Manager.h>
-
 bool Uploader_Manager::get_alive()
 {
-    // Make the GET request
-    http.begin(client, url);
-    int httpCode = http.GET();
+    // if(WiFi.status() != WL_CONNECTED)
+    //     return false;
 
-    // Check the response
-    if (httpCode > 0) {
-        if (httpCode == HTTP_CODE_OK) {
-            String response = http.getString();
-            Serial.println(response);
-        } else {
-            Serial.printf("HTTP request failed with error code: %d\n", httpCode);
-        }
-    } else {
-        Serial.println("Connection failed");
-    }
-
-    // Disconnect from WiFi
-    http.end();
-    
+    // this->http.begin(this->get_alive_url); // Remove the SSL certificate parameter
+    // int httpCode = http.GET();
+    // if(this->logger_manager_ptr!=NULL){
+    //     this->logger_manager_ptr->info("[Uploader_Manager] GET alive returned code: " + String(httpCode));
+    // }
+    // http.end();
+    // if(httpCode > 0)
+    //     return true;
+    // else
+    //     return false;
     return true;
 }
 
-void makeGetRequest(const char* url) {
-    WiFiClient client;
-    HTTPClient http;
+bool Uploader_Manager::post_file(String file_path)
+{
+    if (WiFi.status() != WL_CONNECTED)
+        return false;
+   
+    this->logger_manager_ptr->info("[Uploader_Manager] Openning file " + file_path);
 
-    // Your WiFi credentials
-    const char* ssid = "your_SSID";
-    const char* password = "your_PASSWORD";
+    File_ file = this->sd_manager_ptr->SDfat.open(file_path.c_str(), O_READ);
 
-    // Connect to WiFi
-    WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(1000);
-        Serial.println("Connecting to WiFi...");
+    String file_header = "attachment; filename= " + file_path;
+    this->http.begin(this->post_file_url);
+    this->http.addHeader("Content-Type", "application/octet-stream");
+    this->http.addHeader("mac_address", WiFi.macAddress().c_str());
+    this->http.addHeader("Content-Disposition", file_header.c_str());
+    int httpCode = this->http.POST(file.readString());
+    if (this->logger_manager_ptr != NULL)
+    {
+        if (httpCode > 0)
+        {
+            this->logger_manager_ptr->info("[Uploader_Manager] POST file returned code: " + String(httpCode));
+        }
+        else
+        {
+            this->logger_manager_ptr->error("[Uploader_Manager] POST file returned code: failed, error: " + this->http.errorToString(httpCode));
+        }
     }
+    this->http.end();
+    if (httpCode > 0)
+    {
+        this->sd_manager_ptr->delete_file(file_path);
+        this->logger_manager_ptr->info("[Uploader_Manager] File " + file_path + " posted");
+        return true;
+    }
+    else
+        return false;
+}
 
-        WiFi.disconnect();
+bool Uploader_Manager::uploader()
+{
+    if (this->get_alive() == false)
+    {
+        if (this->logger_manager_ptr != NULL)
+            this->logger_manager_ptr->error("[Uploader_Manager] Not Alive"); 
+        return false;
+    }
+    String file_path = this->sd_manager_ptr->get_oldest_file("/");
+    if (file_path != "" && file_path.indexOf("/System") == -1 && file_path.indexOf("not-ready") == -1)
+    {
+        this->logger_manager_ptr->info("[Uploader_Manager] File to upload BAAAATATA: " + file_path);
+        if (this->post_file(file_path) == true)
+        {
+            if (this->logger_manager_ptr != NULL)
+                this->logger_manager_ptr->info("[Uploader_Manager] File posted");
+            return true;
+        }
+        else
+        {
+            if (this->logger_manager_ptr != NULL)
+                this->logger_manager_ptr->error("[Uploader_Manager] File not posted");
+            return false;
+        }
+    }
+    else
+    {
+        if (this->logger_manager_ptr != NULL)
+            this->logger_manager_ptr->info("[Uploader_Manager] No file to upload");
+        return false;
+    }
+}
+
+void Uploader_Manager::uploader_task(void *z)
+{
+    for (;;)
+    {
+        uploader();
+        vTaskDelay(5000);
+    }
+}
+
+bool Uploader_Manager::create_task()
+{
+    try
+    {
+        if (this->is_task_created == false)
+        {
+            this->is_task_created = true;
+            xTaskCreatePinnedToCore([](void *z)
+                                    { static_cast<Uploader_Manager *>(z)->uploader_task(z); },
+                                    "Uploader", 10000, this, 1, &this->uploader_task_handler, 1);
+            if (this->logger_manager_ptr != NULL)
+                this->logger_manager_ptr->info("[Uploader_Manager] Uploader Task Created");
+            return true;
+        }
+        return false;
+    }
+    catch (const std::exception &e)
+    {
+        if (this->logger_manager_ptr != NULL)
+            this->logger_manager_ptr->error("[Uploader_Manager] Uploader Task not created \n[Uploader_Manager] " + String(e.what()));
+        return false;
+    }
+    return false;
 }

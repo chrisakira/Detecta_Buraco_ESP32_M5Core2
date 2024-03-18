@@ -8,10 +8,10 @@ QueueHandle_t* XQueue_Manager::get_queue_ptr()
 
 BaseType_t XQueue_Manager::receive_data(Data *data)
 {
-    return xQueueReceive(this->xQueue, data, portMAX_DELAY);
+    return xQueueReceive(this->xQueue, data, 1);
 }
 
 BaseType_t XQueue_Manager::send_data(Data* data)
 {
-    return xQueueSend(this->xQueue, data, portMAX_DELAY);
+    return xQueueSend(this->xQueue, data, 1);
 }

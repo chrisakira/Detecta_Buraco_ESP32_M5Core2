@@ -15,7 +15,7 @@
 RTC_TimeTypeDef RTCtime;
 RTC_DateTypeDef RTCDate;
 
-char timeStrbuff[64];
+char timeStrbuff[64]; 
 
 void flushTime() {
     M5.Rtc.GetTime(&RTCtime);  // Gets the time in the real-time clock.

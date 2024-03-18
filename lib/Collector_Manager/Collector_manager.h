@@ -32,7 +32,7 @@ public:
     bool create_task();
 
     void collector_thread(void *z);
-
+    bool collector(Data *data);
 
 private: 
     

@@ -39,7 +39,7 @@ void M5_Manager::update_mpu_data(void *z)
 {
     M5.IMU.Init();
     TickType_t lastWakeTime = xTaskGetTickCount();
-    const TickType_t interval = pdMS_TO_TICKS(1);
+    const TickType_t interval = pdMS_TO_TICKS(5);
 
     for (;;)
     {
@@ -71,9 +71,9 @@ bool M5_Manager::create_tasks()
         if (this->is_task_created == false)
         {
             this->is_task_created = true;
-            xTaskCreate([](void *z)
+            xTaskCreatePinnedToCore([](void *z)
                         { static_cast<M5_Manager *>(z)->update_mpu_data(z); },
-                        "Update the MPU data", 10000, this, 1, &this->update_mpu_data_task_handle);
+                        "Update the MPU data", 10000, this, 1, &this->update_mpu_data_task_handle, 0);
             if (this->logger_manager_ptr != NULL)
                 this->logger_manager_ptr->info("[M5_Manager] Update MPU Task created");
             return true;
@@ -90,3 +90,46 @@ bool M5_Manager::create_tasks()
 }
 
 
+
+
+const char* M5_Manager::get_current_time(){
+    time_t now = time(0); 
+    struct tm *timeinfo = localtime(&now);
+    static char formatted_time[20];
+    sprintf(formatted_time, "%02d-%02d-%04d-%02d-%02d-%02d", timeinfo->tm_mday, timeinfo->tm_mon + 1, timeinfo->tm_year + 1900, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+    return formatted_time;
+}
+
+bool M5_Manager::connect_wifi()
+{
+    WiFi.begin(this->ssid, this->password);
+    if (this->logger_manager_ptr != NULL)
+        this->logger_manager_ptr->info("[M5_Manager] Connecting to WiFi");
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        vTaskDelay(1000);
+        if (this->logger_manager_ptr != NULL)
+            this->logger_manager_ptr->info("[M5_Manager] Connecting to WiFi...");
+    }
+    if (this->logger_manager_ptr != NULL)
+        this->logger_manager_ptr->info("[M5_Manager] Connected to WiFi");
+
+    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+    return true;
+}
+
+void M5_Manager::update_unix_time()
+{
+    this->now;
+    struct tm timeinfo;
+    if (!getLocalTime(&timeinfo))
+    {
+        if (this->logger_manager_ptr != NULL)
+            this->logger_manager_ptr->error("[M5_Manager] Failed to obtain time");
+        return;
+    }
+    this->now = mktime(&timeinfo);
+    if (this->logger_manager_ptr != NULL)
+        this->logger_manager_ptr->info("[M5_Manager] Unix Time: " + String(now));
+    micros_now = esp_timer_get_time();
+}
