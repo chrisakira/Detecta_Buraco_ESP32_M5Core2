@@ -39,7 +39,7 @@ void M5_Manager::update_mpu_data(void *z)
 {
     M5.IMU.Init();
     TickType_t lastWakeTime = xTaskGetTickCount();
-    const TickType_t interval = pdMS_TO_TICKS(5);
+    const TickType_t interval = pdMS_TO_TICKS(1);
 
     for (;;)
     {
@@ -73,7 +73,7 @@ bool M5_Manager::create_tasks()
             this->is_task_created = true;
             xTaskCreatePinnedToCore([](void *z)
                         { static_cast<M5_Manager *>(z)->update_mpu_data(z); },
-                        "Update the MPU data", 10000, this, 1, &this->update_mpu_data_task_handle, 0);
+                        "Update the MPU data", 10000, this, 0, &this->update_mpu_data_task_handle, 1);
             if (this->logger_manager_ptr != NULL)
                 this->logger_manager_ptr->info("[M5_Manager] Update MPU Task created");
             return true;

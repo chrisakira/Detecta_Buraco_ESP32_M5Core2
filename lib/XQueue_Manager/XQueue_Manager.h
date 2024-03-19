@@ -14,7 +14,7 @@ class XQueue_Manager
 {
 public:
   XQueue_Manager(String queue_name = "Default"): queue_name(queue_name) {
-    xQueue = xQueueCreate(100, sizeof(Data));
+   
   }
 
   ~XQueue_Manager() {
@@ -25,7 +25,9 @@ public:
   BaseType_t receive_data(Data *data);
 
   BaseType_t send_data(Data* data);
-
+  void create_queue(){
+    xQueue = xQueueCreate(1000, sizeof(Data));
+  }
   String get_queue_name() {
     return this->queue_name;
   }

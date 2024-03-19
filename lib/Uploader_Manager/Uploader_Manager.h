@@ -5,6 +5,9 @@
 #include <Arduino.h>
 #include <HTTPClient.h>
 
+#include "freertos/semphr.h"
+
+#include "SdFat.h"
 #include "Logger_Manager.h"
 #include "SD_Manager.h"
 
@@ -12,14 +15,20 @@ class Uploader_Manager {
 public:
     Uploader_Manager(   String base_url = "https://192.168.18.127/akirapi", 
                         Logger_Manager* logger_manager_ptr = NULL,
-                        SD_Manager* sd_manager_ptr = NULL): 
+                        SD_Manager* sd_manager_ptr = NULL,
+                        SemaphoreHandle_t* xMutex = NULL): 
+
                     base_url(base_url), 
                     get_alive_url(base_url + "/alive"), 
                     post_json_url(base_url + "/v1/data/json"), 
                     post_file_url(base_url + "/v1/data/file"), 
                     ping_device_url(base_url + "/v1/ping"),
                     logger_manager_ptr(logger_manager_ptr),
-                    sd_manager_ptr(sd_manager_ptr){       
+                    sd_manager_ptr(sd_manager_ptr),
+                    xMutex(xMutex){  
+                        
+    this->http.setReuse(true);
+    this->http.setTimeout(5000);     
     }
 
     ~Uploader_Manager(){} 
@@ -29,9 +38,11 @@ public:
     void uploader_task(void *z);
     bool create_task();
     bool uploader();
-
+    SdFat SDfat;
 private: 
     bool is_task_created = false;
+
+    SemaphoreHandle_t* xMutex;
     SD_Manager* sd_manager_ptr;
     Logger_Manager* logger_manager_ptr;
 
