@@ -1,59 +1,50 @@
 #include <SD_Manager.h>
-
-void SD_Manager::receive_data_buffer(void *z)
+void SD_Manager::sd_writer(void *z)
 {
-    Data tmp;
-    char filename[50];
-    char filename_ready[50];
-    uint8_t buffer[(sizeof(uint_fast64_t) + sizeof(float) + sizeof(int)) * MAX_BUFFER_SIZE * 2] = {0};
-    uint8_t buffer_timestamp[sizeof(uint_fast64_t)+1] = {0};
-    uint8_t buffer_value[sizeof(float)+1] = {0};
-    uint8_t buffer_measurement[sizeof(int)+1] = {0};
     uint_fast32_t j = 0;
-   
+    uint64_t timer_write = 0;
+    sprintf(filename, "%s%s", m5_manager_ptr->get_current_time(), "not-ready.aki");
+    sprintf(filename_ready, "%s%s", m5_manager_ptr->get_current_time(), ".aki");
+    if (myFile.open(filename, O_WRITE | O_CREAT))
+        logger_manager_ptr->debug("[SD_Manager.cpp] Started to write");
+    else
+    {
+        logger_manager_ptr->critical("[SD_Manager.cpp] File not opened");
+        exit(-1);
+    }
     for (;;)
     {
-        if (this->xqueue_manager_ptr->receive_data(&tmp))
+        if (xSemaphoreTake(*this->xSemaphore, portMAX_DELAY) == pdTRUE)
         {
-            if (j >= (sizeof(uint_fast64_t) + sizeof(float) + sizeof(int)) * MAX_BUFFER_SIZE)
-            {   
+            xSemaphoreTake(*this->xMutex, portMAX_DELAY);     
+            timer_write = esp_timer_get_time();
+            
+            if(this->file_writes >= N_WRITES){
+                this->file_writes = 0;
+                myFile.write("#EOF", sizeof("#EOF"));
+                myFile.flush();
+                myFile.rename(filename_ready);
+                myFile.close();
+                xSemaphoreGive(*this->xMutex);
+                xSemaphoreGive(*this->xSemaphore_Uploader);
+                
                 xSemaphoreTake(*this->xMutex, portMAX_DELAY);     
                 sprintf(filename, "%s%s", m5_manager_ptr->get_current_time(), "not-ready.aki");
                 sprintf(filename_ready, "%s%s", m5_manager_ptr->get_current_time(), ".aki");
                 if (myFile.open(filename, O_WRITE | O_CREAT))
-                    logger_manager_ptr->debug("[SD_Manager.cpp] File opened");
+                    logger_manager_ptr->debug("[SD_Manager.cpp] Started to write");
                 else
                 {
                     logger_manager_ptr->critical("[SD_Manager.cpp] File not opened");
                     exit(-1);
                 }
-                myFile.write(buffer, j);
-                myFile.print("#EOF");
-                myFile.flush();
-                myFile.rename(filename_ready);
-                myFile.close();
-                j = 0;
-                xSemaphoreGive(*this->xMutex);
             }
-             
-            memcpy(buffer_timestamp, (uint8_t *)&tmp.time_stamp, sizeof(tmp.time_stamp));
-            memcpy(buffer_value, (uint8_t *)&tmp.value, sizeof(tmp.value));
-            memcpy(buffer_measurement, (uint8_t *)&tmp.measurement, sizeof(tmp.measurement));
-            for (uint_fast8_t i = 0; i < sizeof(tmp.time_stamp); i++)
-            {
-                buffer[j] = buffer_timestamp[i];
-                j++;
-            }
-            for (uint_fast8_t i = 0; i < sizeof(tmp.value); i++)
-            {
-                buffer[j] = buffer_value[i];
-                j++;
-            }
-            for (uint_fast8_t i = 0; i < sizeof(tmp.measurement); i++)
-            {
-                buffer[j] = buffer_measurement[i];
-                j++;
-            }
+            
+            myFile.write(this->collector_manager_ptr->buffer_write, Buffer_size);
+        
+            logger_manager_ptr->debug((esp_timer_get_time() - timer_write));
+            this->file_writes ++;
+            xSemaphoreGive(*this->xMutex);
         }
         else
         {
@@ -71,8 +62,8 @@ bool SD_Manager::create_tasks()
         {
             this->is_task_created = true;
             xTaskCreatePinnedToCore([](void *z)
-                                    { static_cast<SD_Manager *>(z)->receive_data_buffer(z); },
-                                    "Receive Data Buffer", 20000, this, 4, &receive_data_buffer_task_handle, 0);
+                                    { static_cast<SD_Manager *>(z)->sd_writer(z); },
+                                    "Receive Data Buffer", 8192, this, 1, &receive_data_buffer_task_handle, 0);
             return true;
         }
         return false;

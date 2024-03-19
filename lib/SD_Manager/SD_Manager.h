@@ -10,31 +10,35 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
-#include "Data_Manager.h"
-#include "XQueue_Manager.h"
+
 #include "Logger_Manager.h"
 #include "M5_Manager.h"
-#define MAX_BUFFER_SIZE 400U
+#include "Collector_Manager.h"
+
+#define N_WRITES 3U
+
+
 class SD_Manager
 {
 public:
-    SD_Manager( XQueue_Manager* xqueue_manager_ptr = NULL, 
-                Logger_Manager* logger_manager_ptr = NULL,
+    SD_Manager( Logger_Manager* logger_manager_ptr = NULL,
                 M5_Manager* m5_manager_ptr = NULL,
-                SemaphoreHandle_t* xMutex = NULL): 
-                xqueue_manager_ptr(xqueue_manager_ptr), 
+                Collector_Manager* collector_manager_ptr = NULL,
+                SemaphoreHandle_t* xMutex = NULL,
+                SemaphoreHandle_t* xSemaphore = NULL,
+                SemaphoreHandle_t* xSemaphore_Uploader = NULL): 
+                
                 logger_manager_ptr(logger_manager_ptr),
                 m5_manager_ptr(m5_manager_ptr),
-                xMutex(xMutex) {
-    }
+                collector_manager_ptr(collector_manager_ptr),
+                xMutex(xMutex),
+                xSemaphore(xSemaphore),
+                xSemaphore_Uploader(xSemaphore_Uploader) {}
 
     ~SD_Manager() {}
 
     bool create_tasks();
-
-    void receive_data_buffer(void *z);
-
-    void write_data_buffer(void *z);
+    void sd_writer(void *z);
     String get_oldest_file(const char* dirname);
     bool delete_file(String filename);
     void erase_all_files();
@@ -42,14 +46,24 @@ public:
 
 
     SdFat SDfat;
+    bool write = false;
+    uint8_t file_writes = 0;
 private: 
+
+
+    char filename[50];
+    char filename_ready[50];
+    
+
     uint16_t file_counter = 0;
     bool is_task_created = false;
-    SemaphoreHandle_t* xMutex;
-    
-    
+
+    SemaphoreHandle_t* xMutex = NULL;
+    SemaphoreHandle_t* xSemaphore = NULL;
+    SemaphoreHandle_t* xSemaphore_Uploader = NULL;
+
+    Collector_Manager* collector_manager_ptr;
     Logger_Manager* logger_manager_ptr;
-    XQueue_Manager* xqueue_manager_ptr;
     M5_Manager* m5_manager_ptr;
     
     

@@ -120,7 +120,6 @@ bool M5_Manager::connect_wifi()
 
 void M5_Manager::update_unix_time()
 {
-    this->now;
     struct tm timeinfo;
     if (!getLocalTime(&timeinfo))
     {

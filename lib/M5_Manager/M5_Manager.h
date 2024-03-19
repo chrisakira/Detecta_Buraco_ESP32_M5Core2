@@ -53,7 +53,7 @@ public:
     uint_fast64_t micros_now = 0;
 private:
 
-    const char* ssid             = "Maekawa";
+    const char* ssid             = "Perdi";
     const char* password         = "GETWICKED";
     const char* ntpServer        = "pool.ntp.org"; 
     const long gmtOffset_sec     = -10800; // GMT offset for Sao Paulo (UTC-3)

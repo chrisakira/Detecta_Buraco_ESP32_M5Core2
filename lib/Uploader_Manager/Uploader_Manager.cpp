@@ -58,12 +58,12 @@ bool Uploader_Manager::post_file(String file_path)
 
 bool Uploader_Manager::uploader()
 {
-    if (this->get_alive() == false)
-    {
-        if (this->logger_manager_ptr != NULL)
-            this->logger_manager_ptr->error("[Uploader_Manager] Not Alive"); 
-        return false;
-    } 
+    // if (this->get_alive() == false)
+    // {
+    //     if (this->logger_manager_ptr != NULL)
+    //         this->logger_manager_ptr->error("[Uploader_Manager] Not Alive"); 
+    //     return false;
+    // } 
     xSemaphoreTake(*this->xMutex, portMAX_DELAY); 
      
     String file_path = this->sd_manager_ptr->get_oldest_file("/");
@@ -74,7 +74,6 @@ bool Uploader_Manager::uploader()
         {
             if (this->logger_manager_ptr != NULL)
                 this->logger_manager_ptr->info("[Uploader_Manager] File posted");
-             
             xSemaphoreGive(*this->xMutex);
             return true;
         }
@@ -100,8 +99,10 @@ void Uploader_Manager::uploader_task(void *z)
 {
     for (;;)
     {
-        uploader();
-        vTaskDelay(5000);
+        if (xSemaphoreTake(*this->xSemaphore_Uploader, portMAX_DELAY) == pdTRUE) 
+            uploader();
+        else
+            vTaskDelay(5000);
     }
 }
 
@@ -114,7 +115,7 @@ bool Uploader_Manager::create_task()
             this->is_task_created = true;
             xTaskCreatePinnedToCore([](void *z)
                                     { static_cast<Uploader_Manager *>(z)->uploader_task(z); },
-                                    "Uploader", 10000, this, 1, &this->uploader_task_handler, 0);
+                                    "Uploader", 10000, this, 4, &this->uploader_task_handler, 0);
             if (this->logger_manager_ptr != NULL)
                 this->logger_manager_ptr->info("[Uploader_Manager] Uploader Task Created");
             return true;

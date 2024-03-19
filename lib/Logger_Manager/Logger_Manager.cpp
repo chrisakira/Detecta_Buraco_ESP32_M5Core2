@@ -11,10 +11,22 @@ void Logger_Manager::info(String message)
         Serial.println("[info] " + message);
 }
 
+void Logger_Manager::info(int message)
+{
+    if (this->log_level >= INFO)
+        Serial.println("[info] " + String(message));
+}
+
 void Logger_Manager::debug(String message)
 {
     if (this->log_level >= DEBUG)
         Serial.println("[debug] " + message);
+}
+
+void Logger_Manager::debug(uint_fast64_t message)
+{
+    if (this->log_level >= DEBUG)
+        Serial.println(message);
 }
 
 void Logger_Manager::warning(String message)

@@ -16,7 +16,8 @@ public:
     Uploader_Manager(   String base_url = "https://192.168.18.127/akirapi", 
                         Logger_Manager* logger_manager_ptr = NULL,
                         SD_Manager* sd_manager_ptr = NULL,
-                        SemaphoreHandle_t* xMutex = NULL): 
+                        SemaphoreHandle_t* xMutex = NULL,
+                        SemaphoreHandle_t* xSemaphore_Uploader = NULL): 
 
                     base_url(base_url), 
                     get_alive_url(base_url + "/alive"), 
@@ -25,10 +26,10 @@ public:
                     ping_device_url(base_url + "/v1/ping"),
                     logger_manager_ptr(logger_manager_ptr),
                     sd_manager_ptr(sd_manager_ptr),
-                    xMutex(xMutex){  
-                        
-    this->http.setReuse(true);
-    this->http.setTimeout(5000);     
+                    xMutex(xMutex),
+                    xSemaphore_Uploader(xSemaphore_Uploader){  
+        this->http.setReuse(true);
+        this->http.setTimeout(5000);     
     }
 
     ~Uploader_Manager(){} 
@@ -43,6 +44,8 @@ private:
     bool is_task_created = false;
 
     SemaphoreHandle_t* xMutex;
+    SemaphoreHandle_t* xSemaphore_Uploader;
+    
     SD_Manager* sd_manager_ptr;
     Logger_Manager* logger_manager_ptr;
 

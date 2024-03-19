@@ -28,7 +28,11 @@ public:
   }
   void flush();
   void info(String message);
+  void info(int message);
+
   void debug(String message);
+  void debug(uint_fast64_t message);
+  
   void warning(String message);
   void error(String message);
   void critical(String message);

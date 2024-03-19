@@ -1,39 +1,43 @@
 #include <Arduino.h>
-#include <M5Core2.h>
-#include <vector>
-#include "driver/gpio.h"
-#include "SdFat.h"
+
 #include "M5_Manager.h"
 #include "SD_Manager.h"
-#include "Data_Manager.h"
-#include "XQueue_Manager.h"
+#include "Collector_Manager.h"
 #include "Logger_Manager.h"
 #include "Uploader_Manager.h"
 
-SemaphoreHandle_t xMutex;
+SemaphoreHandle_t xMutex     = NULL;
+SemaphoreHandle_t xSemaphore = NULL;
+SemaphoreHandle_t xSemaphore_Uploader = NULL;
 
 Logger_Manager logger_manager(INFO);
+Collector_Manager collector_manager(&logger_manager, &xMutex, &xSemaphore);
 M5_Manager m5_manager(&logger_manager);
-XQueue_Manager xqueue_manager("Main_Queue");
-SD_Manager sd_manager(&xqueue_manager, &logger_manager, &m5_manager, &xMutex);
-Uploader_Manager uploader_manager("http://7e3a-177-220-186-45.ngrok-free.app", &logger_manager, &sd_manager, &xMutex);
+SD_Manager sd_manager(&logger_manager, &m5_manager, &collector_manager, &xMutex, &xSemaphore, &xSemaphore_Uploader);
+Uploader_Manager uploader_manager("http://88f8-138-204-24-38.ngrok-free.app", &logger_manager, &sd_manager, &xMutex, &xSemaphore_Uploader);
 
 TickType_t lastWakeTime = xTaskGetTickCount();
-const TickType_t interval = pdMS_TO_TICKS(50);
-Data data;
+const TickType_t interval = pdMS_TO_TICKS(1);
 
-void setup() {
-    xMutex = xSemaphoreCreateMutex();
-    xqueue_manager.create_queue();
+void setup()
+{
+    disableCore0WDT();
+    xMutex              = xSemaphoreCreateMutex();
+    xSemaphore          = xSemaphoreCreateBinary();
+    xSemaphore_Uploader = xSemaphoreCreateBinary();
+
+    log_d("Total heap: %d", ESP.getHeapSize());
+    log_d("Free heap: %d", ESP.getFreeHeap());
+    log_d("Total PSRAM: %d", ESP.getPsramSize());
+    log_d("Free PSRAM: %d", ESP.getFreePsram());
     m5_manager.M5_begin(false, false, false, false);
     m5_manager.connect_wifi();
     m5_manager.update_unix_time();
-    uploader_manager.get_alive();
+    // uploader_manager.get_alive();
     sd_manager.connect_sd();
-    
-    logger_manager.info("Erasing SD Card");
     sd_manager.erase_all_files();
-    logger_manager.info("Erased SD Card");
+    collector_manager.alloc_buffers();
+    
     if (m5_manager.create_tasks())
         logger_manager.info("M5 manager Tasks created");
 
@@ -51,39 +55,23 @@ void setup() {
         exit(-1);
     }
 
-    if(uploader_manager.create_task())
-        logger_manager.info("Uploader Task Created");
-    else{
-        logger_manager.error("Uploader Task not created");
-        logger_manager.flush();
-        exit(-1);
-    }
-    
+    // if(uploader_manager.create_task())
+    //     logger_manager.info("Uploader Task Created");
+    // else{
+    //     logger_manager.error("Uploader Task not created");
+    //     logger_manager.flush();
+    //     exit(-1);
+    // }
 }
 
-void loop() {
+void loop()
+{
     float pitch = m5_manager.pitch;
     float roll = m5_manager.roll;
     float yaw = m5_manager.yaw;
-    
-    uint_fast64_t  timestamp = ((uint_fast64_t )m5_manager.now)*1000000 + (esp_timer_get_time() - m5_manager.micros_now);
-
-    data.time_stamp = timestamp;
-    
-    data.measurement = 0;
-    data.value = pitch;
-    if (xqueue_manager.send_data(&data) != pdTRUE)
-        logger_manager.error("[Collector_Manager.cpp] Pitch Data not Sent");
-
-    data.measurement = 1;
-    data.value = roll;
-    if (xqueue_manager.send_data(&data) != pdTRUE)
-        logger_manager.error("[Collector_Manager.cpp] Roll Data not Sent");
-
-    data.measurement = 2;
-    data.value = yaw;
-    if (xqueue_manager.send_data(&data) != pdTRUE)
-        logger_manager.error("[Collector_Manager.cpp] Yaw Data not Sent");
+    uint_fast64_t timestamp = ((uint_fast64_t)m5_manager.now) * 1000000 + (esp_timer_get_time() - m5_manager.micros_now);
+    collector_manager.add_sample(pitch, 0, timestamp);
+    collector_manager.add_sample(roll, 0, timestamp);
+    collector_manager.add_sample(yaw, 0, timestamp);
     vTaskDelayUntil(&lastWakeTime, interval);
-
 }
