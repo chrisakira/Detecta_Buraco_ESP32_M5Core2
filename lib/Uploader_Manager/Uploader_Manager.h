@@ -9,13 +9,11 @@
 
 #include "SdFat.h"
 #include "Logger_Manager.h"
-#include "SD_Manager.h"
-
+#include "Collector_Manager.h"
 class Uploader_Manager {
 public:
     Uploader_Manager(   String base_url = "https://192.168.18.127/akirapi", 
                         Logger_Manager* logger_manager_ptr = NULL,
-                        SD_Manager* sd_manager_ptr = NULL,
                         SemaphoreHandle_t* xMutex = NULL,
                         SemaphoreHandle_t* xSemaphore_Uploader = NULL): 
 
@@ -25,9 +23,7 @@ public:
                     post_file_url(base_url + "/v1/data/file"), 
                     ping_device_url(base_url + "/v1/ping"),
                     logger_manager_ptr(logger_manager_ptr),
-                    sd_manager_ptr(sd_manager_ptr),
-                    xMutex(xMutex),
-                    xSemaphore_Uploader(xSemaphore_Uploader){  
+                    xMutex(xMutex){  
         this->http.setReuse(true);
         this->http.setTimeout(5000);     
     }
@@ -35,18 +31,20 @@ public:
     ~Uploader_Manager(){} 
 
     bool get_alive();
-    bool post_file(String file_path = "");
+    bool post_file(String file_path = "", SdFat *SDfat = NULL);
     void uploader_task(void *z);
     bool create_task();
     bool uploader();
-    SdFat SDfat;
+    void alloc_buffers(){
+        buffer = (uint8_t*) ps_malloc(Buffer_size);
+    }
+    uint8_t *buffer = NULL;
 private: 
     bool is_task_created = false;
 
     SemaphoreHandle_t* xMutex;
     SemaphoreHandle_t* xSemaphore_Uploader;
     
-    SD_Manager* sd_manager_ptr;
     Logger_Manager* logger_manager_ptr;
 
     TaskHandle_t uploader_task_handler;

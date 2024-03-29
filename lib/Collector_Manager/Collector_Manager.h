@@ -7,7 +7,7 @@
 
 #include "Logger_Manager.h"
 
-#define Buffer_size 1600000U
+#define Buffer_size 160000U
 
 class Collector_Manager
 {

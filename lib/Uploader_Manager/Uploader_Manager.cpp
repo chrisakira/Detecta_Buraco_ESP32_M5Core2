@@ -17,8 +17,9 @@ bool Uploader_Manager::get_alive()
     return true;
 }
 
-bool Uploader_Manager::post_file(String file_path)
+bool Uploader_Manager::post_file(String file_path, SdFat *SDfat)
 {
+    
     if (WiFi.status() != WL_CONNECTED)
         return false;
     
@@ -30,30 +31,37 @@ bool Uploader_Manager::post_file(String file_path)
     this->http.addHeader("Content-Type", "application/octet-stream");
     this->http.addHeader("mac_address", WiFi.macAddress().c_str());
     this->http.addHeader("Content-Disposition", file_header.c_str());
-    File_ file = this->sd_manager_ptr->SDfat.open(file_path.c_str(), O_READ);
-    int httpCode = this->http.POST(file.readString());
-    if (this->logger_manager_ptr != NULL)
-    {
-        if (httpCode > 0)
-        {
-            this->logger_manager_ptr->info("[Uploader_Manager] POST file returned code: " + String(httpCode));
-        }
-        else
-        {
-            this->logger_manager_ptr->error("[Uploader_Manager] POST file returned code: failed, error: " + this->http.errorToString(httpCode));
-        }
-    }
+    file_path = "/" + file_path;    
+    File_ file = SDfat->open(file_path.c_str(), O_READ);
+     // Enviar o arquivo via POST
+    size_t bytesRead = 0;
+    bytesRead = file.readBytes(buffer, Buffer_size+5);
+    if(bytesRead > 10)
+        http.sendRequest("POST", buffer, bytesRead);
+    vTaskDelay(1);
+
+    // int httpCode = this->http.responseStatusCode();
+    // if (this->logger_manager_ptr != NULL)
+    // {
+    //     if (httpCode > 0)
+    //     {
+    //         this->logger_manager_ptr->info("[Uploader_Manager] POST file returned code: " + String(httpCode));
+    //     }
+    //     else
+    //     {
+    //         this->logger_manager_ptr->error("[Uploader_Manager] POST file returned code: failed, error: " + this->http.errorToString(httpCode));
+    //     }
+    // }
     this->http.end();
-    if (httpCode > 0)
-    {
-        this->sd_manager_ptr->delete_file(file_path);
-        this->logger_manager_ptr->info("[Uploader_Manager] File " + file_path + " posted");
-        return true;
-    }
-    else{
-        this->sd_manager_ptr->delete_file(file_path);
-        return false;
-    }
+    return true;
+    // if (httpCode > 0)
+    // {
+    //     this->logger_manager_ptr->info("[Uploader_Manager] File " + file_path + " posted");
+    //     return true;
+    // }
+    // else{
+    //     return false;
+    // }
 }
 
 bool Uploader_Manager::uploader()
@@ -66,7 +74,7 @@ bool Uploader_Manager::uploader()
     // } 
     xSemaphoreTake(*this->xMutex, portMAX_DELAY); 
      
-    String file_path = this->sd_manager_ptr->get_oldest_file("/");
+    String file_path = ""; //this->sd_manager_ptr->get_oldest_file("/");
     if (file_path != "" && file_path.indexOf("/System") == -1 && file_path.indexOf("not-ready") == -1)
     {
         this->logger_manager_ptr->info("[Uploader_Manager] File to upload BAAAATATA: " + file_path);

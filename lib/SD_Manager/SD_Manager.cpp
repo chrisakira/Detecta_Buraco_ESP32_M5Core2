@@ -19,16 +19,14 @@ void SD_Manager::sd_writer(void *z)
             xSemaphoreTake(*this->xMutex, portMAX_DELAY);     
             timer_write = esp_timer_get_time();
             
-            if(this->file_writes >= N_WRITES){
+            // if(this->file_writes >= N_WRITES){
                 this->file_writes = 0;
                 myFile.write("#EOF", sizeof("#EOF"));
                 myFile.flush();
                 myFile.rename(filename_ready);
                 myFile.close();
-                xSemaphoreGive(*this->xMutex);
-                xSemaphoreGive(*this->xSemaphore_Uploader);
-                
-                xSemaphoreTake(*this->xMutex, portMAX_DELAY);     
+                this->uploader_manager_ptr->post_file(filename_ready, &this->SDfat);
+                this->delete_file(filename_ready);
                 sprintf(filename, "%s%s", m5_manager_ptr->get_current_time(), "not-ready.aki");
                 sprintf(filename_ready, "%s%s", m5_manager_ptr->get_current_time(), ".aki");
                 if (myFile.open(filename, O_WRITE | O_CREAT))
@@ -38,7 +36,7 @@ void SD_Manager::sd_writer(void *z)
                     logger_manager_ptr->critical("[SD_Manager.cpp] File not opened");
                     exit(-1);
                 }
-            }
+            // }
             
             myFile.write(this->collector_manager_ptr->buffer_write, Buffer_size);
         

@@ -6,23 +6,20 @@ void Collector_Manager::add_sample(const float value_, const int measurement_, c
     int             measurement = measurement_;
     uint_fast64_t   timestamp   = timestamp_;
     
-    memcpy(buffer_8_bytes, (uint8_t *)&timestamp, sizeof(timestamp));
-    if (j + sizeof(timestamp) <= (Buffer_size))
-        for (uint_fast8_t i = 0; i < sizeof(timestamp); i++)
+    memcpy(this->buffer_8_bytes, (uint8_t *)&timestamp, sizeof(timestamp));
+        for (uint_fast8_t i = 0; i < 8; i++)
         {
-            buffer_read[j] = buffer_8_bytes[i];
-            j++;
+            this->buffer_read[this->j] = this->buffer_8_bytes[i];
+            this->j++;
         }
     memcpy(buffer_4_bytes, (uint8_t *)&value, sizeof(value));
-    if (j + sizeof(value) <= (Buffer_size))
-        for (uint_fast8_t i = 0; i < sizeof(value); i++)
+        for (uint_fast8_t i = 0; i < 4; i++)
         {
             this->buffer_read[this->j] = this->buffer_4_bytes[i];
             this->j++;
         }
     memcpy(this->buffer_4_bytes, (uint8_t *)&measurement, sizeof(measurement));
-    if (j + sizeof(measurement) <= (Buffer_size))
-        for (uint_fast8_t i = 0; i < sizeof(measurement); i++)
+        for (uint_fast8_t i = 0; i < 4; i++)
         {
             this->buffer_read[j] = this->buffer_4_bytes[i];
             this->j++;

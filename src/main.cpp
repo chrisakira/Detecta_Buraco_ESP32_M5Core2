@@ -11,13 +11,13 @@ SemaphoreHandle_t xSemaphore = NULL;
 SemaphoreHandle_t xSemaphore_Uploader = NULL;
 
 Logger_Manager logger_manager(INFO);
-Collector_Manager collector_manager(&logger_manager, &xMutex, &xSemaphore);
 M5_Manager m5_manager(&logger_manager);
-SD_Manager sd_manager(&logger_manager, &m5_manager, &collector_manager, &xMutex, &xSemaphore, &xSemaphore_Uploader);
-Uploader_Manager uploader_manager("http://88f8-138-204-24-38.ngrok-free.app", &logger_manager, &sd_manager, &xMutex, &xSemaphore_Uploader);
+Collector_Manager collector_manager(&logger_manager, &xMutex, &xSemaphore);
+Uploader_Manager uploader_manager("http://88f8-138-204-24-38.ngrok-free.app", &logger_manager, &xMutex, &xSemaphore_Uploader);
+SD_Manager sd_manager(&logger_manager, &m5_manager, &collector_manager, &uploader_manager, &xMutex, &xSemaphore, &xSemaphore_Uploader);
 
 TickType_t lastWakeTime = xTaskGetTickCount();
-const TickType_t interval = pdMS_TO_TICKS(1);
+const TickType_t interval = pdMS_TO_TICKS(10);
 
 void setup()
 {
@@ -30,12 +30,14 @@ void setup()
     log_d("Free heap: %d", ESP.getFreeHeap());
     log_d("Total PSRAM: %d", ESP.getPsramSize());
     log_d("Free PSRAM: %d", ESP.getFreePsram());
+    sd_manager.set_logger_manager(&logger_manager);
     m5_manager.M5_begin(false, false, false, false);
     m5_manager.connect_wifi();
     m5_manager.update_unix_time();
     // uploader_manager.get_alive();
     sd_manager.connect_sd();
     sd_manager.erase_all_files();
+    uploader_manager.alloc_buffers();
     collector_manager.alloc_buffers();
     
     if (m5_manager.create_tasks())
@@ -70,8 +72,10 @@ void loop()
     float roll = m5_manager.roll;
     float yaw = m5_manager.yaw;
     uint_fast64_t timestamp = ((uint_fast64_t)m5_manager.now) * 1000000 + (esp_timer_get_time() - m5_manager.micros_now);
-    collector_manager.add_sample(pitch, 0, timestamp);
-    collector_manager.add_sample(roll, 0, timestamp);
-    collector_manager.add_sample(yaw, 0, timestamp);
+    collector_manager.add_sample(0,  0, timestamp);
+    collector_manager.add_sample(10, 1, timestamp);
+    collector_manager.add_sample(20, 2, timestamp);
+    collector_manager.add_sample(30, 3, timestamp);
+    collector_manager.add_sample(40, 4, timestamp);
     vTaskDelayUntil(&lastWakeTime, interval);
 }

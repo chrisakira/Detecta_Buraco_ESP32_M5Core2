@@ -12,11 +12,11 @@
 
 
 #include "Logger_Manager.h"
+#include "Uploader_Manager.h"
 #include "M5_Manager.h"
 #include "Collector_Manager.h"
 
-#define N_WRITES 3U
-
+#define N_WRITES 2U
 
 class SD_Manager
 {
@@ -24,6 +24,7 @@ public:
     SD_Manager( Logger_Manager* logger_manager_ptr = NULL,
                 M5_Manager* m5_manager_ptr = NULL,
                 Collector_Manager* collector_manager_ptr = NULL,
+                Uploader_Manager* uploader_manager_ptr = NULL,
                 SemaphoreHandle_t* xMutex = NULL,
                 SemaphoreHandle_t* xSemaphore = NULL,
                 SemaphoreHandle_t* xSemaphore_Uploader = NULL): 
@@ -31,6 +32,7 @@ public:
                 logger_manager_ptr(logger_manager_ptr),
                 m5_manager_ptr(m5_manager_ptr),
                 collector_manager_ptr(collector_manager_ptr),
+                uploader_manager_ptr(uploader_manager_ptr),
                 xMutex(xMutex),
                 xSemaphore(xSemaphore),
                 xSemaphore_Uploader(xSemaphore_Uploader) {}
@@ -44,7 +46,9 @@ public:
     void erase_all_files();
     bool connect_sd();
 
-
+    void set_logger_manager(Logger_Manager* logger_manager_ptr){
+        
+    }
     SdFat SDfat;
     bool write = false;
     uint8_t file_writes = 0;
@@ -62,6 +66,7 @@ private:
     SemaphoreHandle_t* xSemaphore = NULL;
     SemaphoreHandle_t* xSemaphore_Uploader = NULL;
 
+    Uploader_Manager* uploader_manager_ptr = NULL;
     Collector_Manager* collector_manager_ptr;
     Logger_Manager* logger_manager_ptr;
     M5_Manager* m5_manager_ptr;
