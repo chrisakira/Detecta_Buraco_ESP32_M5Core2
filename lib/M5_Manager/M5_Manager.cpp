@@ -1,5 +1,6 @@
 #include "M5_Manager.h"
 
+
 bool M5_Manager::check_LCD()
 {
     if (this->lcd_initialized == false)
@@ -41,8 +42,23 @@ void M5_Manager::update_mpu_data(void *z)
     TickType_t lastWakeTime = xTaskGetTickCount();
     const TickType_t interval = pdMS_TO_TICKS(1);
 
+    Serial2.begin(GPSBaud, SERIAL_8N1, RXPin, TXPin);
     for (;;)
     {
+        while (Serial2.available() > 0)
+        {
+            gps.encode(Serial2.read());
+            if (gps.location.isUpdated())
+            {
+                Serial.print("Latitude= ");
+                Serial.print(gps.location.lat(), 6);
+                Serial.print(" Longitude= ");
+                Serial.print(gps.location.lng(), 6);
+                Serial.print(" speed= ");
+                Serial.println(gps.speed.kmph(), 6);
+            }
+        }
+
         M5.IMU.getAhrsData(&this->gyro_X, &this->gyro_Y, &this->gyro_Z, &this->accel_X, &this->accel_Y, &this->accel_Z, &this->pitch, &this->roll, &this->yaw);
         M5.IMU.getTempData(&this->temperature);
 
@@ -72,8 +88,8 @@ bool M5_Manager::create_tasks()
         {
             this->is_task_created = true;
             xTaskCreatePinnedToCore([](void *z)
-                        { static_cast<M5_Manager *>(z)->update_mpu_data(z); },
-                        "Update the MPU data", 10000, this, 0, &this->update_mpu_data_task_handle, 1);
+                                    { static_cast<M5_Manager *>(z)->update_mpu_data(z); },
+                                    "Update the MPU data", 10000, this, 0, &this->update_mpu_data_task_handle, 1);
             if (this->logger_manager_ptr != NULL)
                 this->logger_manager_ptr->info("[M5_Manager] Update MPU Task created");
             return true;
@@ -89,11 +105,9 @@ bool M5_Manager::create_tasks()
     return false;
 }
 
-
-
-
-const char* M5_Manager::get_current_time(){
-    time_t now = time(0); 
+const char *M5_Manager::get_current_time()
+{
+    time_t now = time(0);
     struct tm *timeinfo = localtime(&now);
     static char formatted_time[20];
     sprintf(formatted_time, "%02d-%02d-%04d-%02d-%02d-%02d", timeinfo->tm_mday, timeinfo->tm_mon + 1, timeinfo->tm_year + 1900, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);

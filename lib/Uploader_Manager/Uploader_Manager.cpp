@@ -29,39 +29,21 @@ bool Uploader_Manager::post_file(String file_path, SdFat *SDfat)
     String file_header = "attachment; filename= " + file_path;
     this->http.begin(this->post_file_url);
     this->http.addHeader("Content-Type", "application/octet-stream");
-    this->http.addHeader("mac_address", WiFi.macAddress().c_str());
+    this->http.addHeader("Authorization", "ksaldkalskd");
+    this->http.addHeader("Cookie", "device=" + WiFi.macAddress()); 
     this->http.addHeader("Content-Disposition", file_header.c_str());
     file_path = "/" + file_path;    
     File_ file = SDfat->open(file_path.c_str(), O_READ);
      // Enviar o arquivo via POST
     size_t bytesRead = 0;
-    bytesRead = file.readBytes(buffer, Buffer_size+5);
+    bytesRead = file.readBytes(buffer, Buffer_size+4);
+   
+    this->logger_manager_ptr->info("[Uploader_Manager] Bytes read: " + String(bytesRead));
     if(bytesRead > 10)
         http.sendRequest("POST", buffer, bytesRead);
-    vTaskDelay(1);
 
-    // int httpCode = this->http.responseStatusCode();
-    // if (this->logger_manager_ptr != NULL)
-    // {
-    //     if (httpCode > 0)
-    //     {
-    //         this->logger_manager_ptr->info("[Uploader_Manager] POST file returned code: " + String(httpCode));
-    //     }
-    //     else
-    //     {
-    //         this->logger_manager_ptr->error("[Uploader_Manager] POST file returned code: failed, error: " + this->http.errorToString(httpCode));
-    //     }
-    // }
     this->http.end();
     return true;
-    // if (httpCode > 0)
-    // {
-    //     this->logger_manager_ptr->info("[Uploader_Manager] File " + file_path + " posted");
-    //     return true;
-    // }
-    // else{
-    //     return false;
-    // }
 }
 
 bool Uploader_Manager::uploader()

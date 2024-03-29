@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <M5Core2.h>
+#include <TinyGPS++.h> 
 #include <WiFi.h>
 #include <ctime>
 #include "time.h"
@@ -53,6 +54,10 @@ public:
     uint_fast64_t micros_now = 0;
 private:
 
+    static const int RXPin = SCL, TXPin = SDA;
+    static const uint32_t GPSBaud = 9600;
+
+    TinyGPSPlus gps; 
     const char* ssid             = "Maekawa";
     const char* password         = "GETWICKED";
     const char* ntpServer        = "pool.ntp.org"; 

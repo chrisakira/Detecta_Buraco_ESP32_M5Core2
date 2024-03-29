@@ -5,9 +5,8 @@
 #include "freertos/semphr.h"
 #include "freertos/FreeRTOS.h"
 
-#include "Logger_Manager.h"
-
-#define Buffer_size 160000U
+#include "Logger_Manager.h" 
+#define Buffer_size 200000U
 
 class Collector_Manager
 {
@@ -23,10 +22,10 @@ public:
 
   ~Collector_Manager(){}
 
-  void add_sample(float value, int measurement, uint_fast64_t timestamp);
-  bool alloc_buffers(){
-    buffer_read  = (uint8_t*) ps_malloc(Buffer_size);
-    buffer_write = (uint8_t*) ps_malloc(Buffer_size);
+  void add_sample(double value, int measurement, uint_fast64_t timestamp);
+  bool alloc_buffers(){ 
+    buffer_read  = (uint8_t*) heap_caps_malloc(Buffer_size, MALLOC_CAP_SPIRAM);
+    buffer_write = (uint8_t*) heap_caps_malloc(Buffer_size, MALLOC_CAP_SPIRAM);
     log_d("Total PSRAM: %d", ESP.getPsramSize());
     log_d("Used PSRAM: %d", ESP.getPsramSize() - ESP.getFreePsram()); 
     log_d("Free PSRAM: %d", ESP.getFreePsram());

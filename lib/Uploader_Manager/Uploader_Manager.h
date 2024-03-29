@@ -20,7 +20,7 @@ public:
                     base_url(base_url), 
                     get_alive_url(base_url + "/alive"), 
                     post_json_url(base_url + "/v1/data/json"), 
-                    post_file_url(base_url + "/v1/data/file"), 
+                    post_file_url(base_url + "/v1/data/akira"), 
                     ping_device_url(base_url + "/v1/ping"),
                     logger_manager_ptr(logger_manager_ptr),
                     xMutex(xMutex){  
@@ -35,8 +35,8 @@ public:
     void uploader_task(void *z);
     bool create_task();
     bool uploader();
-    void alloc_buffers(){
-        buffer = (uint8_t*) ps_malloc(Buffer_size);
+    void alloc_buffers(){ 
+        buffer = (uint8_t*) heap_caps_malloc(Buffer_size+4, MALLOC_CAP_SPIRAM);
     }
     uint8_t *buffer = NULL;
 private: 

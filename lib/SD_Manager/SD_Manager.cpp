@@ -16,39 +16,48 @@ void SD_Manager::sd_writer(void *z)
     {
         if (xSemaphoreTake(*this->xSemaphore, portMAX_DELAY) == pdTRUE)
         {
-            xSemaphoreTake(*this->xMutex, portMAX_DELAY);     
+            while(xSemaphoreTake(*this->xMutex, portMAX_DELAY) != pdTRUE) {
+                vTaskDelay(1);
+            }
+            
             timer_write = esp_timer_get_time();
-            
-            // if(this->file_writes >= N_WRITES){
-                this->file_writes = 0;
-                myFile.write("#EOF", sizeof("#EOF"));
-                myFile.flush();
-                myFile.rename(filename_ready);
-                myFile.close();
-                this->uploader_manager_ptr->post_file(filename_ready, &this->SDfat);
-                this->delete_file(filename_ready);
-                sprintf(filename, "%s%s", m5_manager_ptr->get_current_time(), "not-ready.aki");
-                sprintf(filename_ready, "%s%s", m5_manager_ptr->get_current_time(), ".aki");
-                if (myFile.open(filename, O_WRITE | O_CREAT))
-                    logger_manager_ptr->debug("[SD_Manager.cpp] Started to write");
-                else
-                {
-                    logger_manager_ptr->critical("[SD_Manager.cpp] File not opened");
-                    exit(-1);
-                }
+
+            Serial.print("\nBuffer Wrote: ");
+
+            // for (size_t i = 0; i < Buffer_size; i++)
+            // {
+            //     Serial.print(this->collector_manager_ptr->buffer_write[i], HEX);
+            //     Serial.print(" ");
             // }
-            
+            // Serial.println();
             myFile.write(this->collector_manager_ptr->buffer_write, Buffer_size);
-        
+
+            // if(this->file_writes >= N_WRITES){
+            this->file_writes = 0;
+            myFile.write("#EOF", sizeof("#EOF"));
+            myFile.flush();
+            myFile.rename(filename_ready);
+            myFile.close();
+            this->uploader_manager_ptr->post_file(filename_ready, &this->SDfat);
+            this->delete_file(filename_ready);
+            sprintf(filename, "%s%s", m5_manager_ptr->get_current_time(), "not-ready.aki");
+            sprintf(filename_ready, "%s%s", m5_manager_ptr->get_current_time(), ".aki");
+            if (myFile.open(filename, O_WRITE | O_CREAT))
+                logger_manager_ptr->debug("[SD_Manager.cpp] Started to write");
+            else
+            {
+                logger_manager_ptr->critical("[SD_Manager.cpp] File not opened");
+                exit(-1);
+            }
+            // }
             logger_manager_ptr->debug((esp_timer_get_time() - timer_write));
-            this->file_writes ++;
+            this->file_writes++;
             xSemaphoreGive(*this->xMutex);
         }
         else
         {
             vTaskDelay(1);
         }
-            
     }
 }
 
@@ -123,23 +132,24 @@ String SD_Manager::get_oldest_file(const char *dirname)
         {
             return String("/") + String(filename);
         }
-        else{            
+        else
+        {
             return "";
         }
     }
     else
-    { 
+    {
         return "";
     }
 }
 
 void SD_Manager::erase_all_files()
 {
-    
+
     SdFile_ dir;
     if (!dir.open("/"))
     {
-        Serial.println("Failed to open directory"); 
+        Serial.println("Failed to open directory");
         return;
     }
 
@@ -147,7 +157,7 @@ void SD_Manager::erase_all_files()
     SdFile_ file;
 
     while (file.openNext(&dir, O_READ))
-    {   
+    {
         dir_t dirEntry;
         file.dirEntry(&dirEntry);
 
@@ -165,22 +175,24 @@ void SD_Manager::erase_all_files()
 
         file.close();
     }
-    
 }
 
 bool SD_Manager::delete_file(String filename)
-{     
+{
     if (SDfat.remove(filename.c_str()))
     {
         return true;
     }
-    else{
+    else
+    {
         return false;
     }
 }
 
-bool SD_Manager::connect_sd(){
-    if (this->SDfat.begin(4, SD_SCK_MHZ(26))){
+bool SD_Manager::connect_sd()
+{
+    if (this->SDfat.begin(4, SD_SCK_MHZ(26)))
+    {
         this->logger_manager_ptr->debug("[SD_Manager.cpp] SD card initialized");
         return true;
     }
