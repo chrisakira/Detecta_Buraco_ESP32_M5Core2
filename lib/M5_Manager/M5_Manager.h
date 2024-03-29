@@ -37,6 +37,11 @@ public:
 
     void update_unix_time();
 
+    double Latitude     = 0.0F;
+    double Longitude    = 0.0F;
+    double Altitude     = 0.0F;
+    double Speed        = 0.0F;
+
     float accel_X = 0.0F;
     float accel_Y = 0.0F;
     float accel_Z = 0.0F;
@@ -54,7 +59,7 @@ public:
     uint_fast64_t micros_now = 0;
 private:
 
-    static const int RXPin = SCL, TXPin = SDA;
+    static const int RXPin = SDA, TXPin = SCL;
     static const uint32_t GPSBaud = 9600;
 
     TinyGPSPlus gps; 

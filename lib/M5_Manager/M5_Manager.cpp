@@ -50,12 +50,16 @@ void M5_Manager::update_mpu_data(void *z)
             gps.encode(Serial2.read());
             if (gps.location.isUpdated())
             {
-                Serial.print("Latitude= ");
-                Serial.print(gps.location.lat(), 6);
-                Serial.print(" Longitude= ");
-                Serial.print(gps.location.lng(), 6);
-                Serial.print(" speed= ");
-                Serial.println(gps.speed.kmph(), 6);
+                Latitude = gps.location.lat();
+                Longitude = gps.location.lng();
+                Altitude = gps.altitude.meters();
+                Speed = gps.speed.kmph();
+            }
+            else{
+                Latitude = 0.0F;
+                Longitude = 0.0F;
+                Altitude = 0.0F;
+                Speed = 0.0F;
             }
         }
 

@@ -28,18 +28,6 @@ void displayInfo();
 
 void setup()
 {
-    Serial.begin(115200);
-    Serial2.begin(9600, SERIAL_8N1, SDA, SCL);
-    while (1)
-    {
-        while (Serial2.available() > 0)
-            if (gps.encode(Serial2.read()))
-                displayInfo();
-        if (millis() > 5000 && gps.charsProcessed() < 10)
-        {
-            Serial.println(F("No GPS detected: check wiring."));
-        }
-    }
     disableCore0WDT();
     xMutex = xSemaphoreCreateMutex();
     xSemaphore = xSemaphoreCreateBinary();
@@ -92,10 +80,28 @@ void loop()
     float pitch = m5_manager.pitch;
     float roll = m5_manager.roll;
     float yaw = m5_manager.yaw;
+    double Latitude = m5_manager.Latitude;
+    double Longitude = m5_manager.Longitude;
+    double Altitude = m5_manager.Altitude;
+    double Speed = m5_manager.Speed;
+
+
     uint_fast64_t timestamp = ((uint_fast64_t)m5_manager.now) * 1000000 + (esp_timer_get_time() - m5_manager.micros_now);
     collector_manager.add_sample(pitch, 0, timestamp);
     collector_manager.add_sample(roll, 1, timestamp);
     collector_manager.add_sample(yaw, 2, timestamp);
+    if(Latitude != 0.0F)
+        collector_manager.add_sample(Latitude, 3, timestamp);
+
+    if(Longitude != 0.0F)
+        collector_manager.add_sample(Longitude, 4, timestamp);
+    
+    if(Altitude != 0.0F)
+        collector_manager.add_sample(Altitude, 5, timestamp);
+    
+    if(Speed != 0.0F)
+        collector_manager.add_sample(Speed, 6, timestamp);
+        
     vTaskDelayUntil(&lastWakeTime, interval);
 }
 
