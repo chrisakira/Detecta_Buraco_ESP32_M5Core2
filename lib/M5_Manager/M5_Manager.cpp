@@ -43,10 +43,13 @@ void M5_Manager::update_mpu_data(void *z)
     const TickType_t interval = pdMS_TO_TICKS(1);
 
     Serial2.begin(GPSBaud, SERIAL_8N1, RXPin, TXPin);
+    this->reset_LCD();
+    M5.Lcd.println("GPS OFF");
     for (;;)
     {
         while (Serial2.available() > 0)
         {
+
             gps.encode(Serial2.read());
             if (gps.location.isUpdated())
             {
@@ -54,6 +57,13 @@ void M5_Manager::update_mpu_data(void *z)
                 Longitude = gps.location.lng();
                 Altitude = gps.altitude.meters();
                 Speed = gps.speed.kmph();
+                GPS_last_seen = esp_timer_get_time();
+                if(this->gps_status == false){
+                    this->gps_status = true;
+                    this->reset_LCD();
+                    M5.Lcd.println("GPS ON");
+                }
+                
             }
             else{
                 Latitude = 0.0F;
@@ -61,6 +71,11 @@ void M5_Manager::update_mpu_data(void *z)
                 Altitude = 0.0F;
                 Speed = 0.0F;
             }
+        }
+        if((this->GPS_last_seen < esp_timer_get_time() - 2000000) && (this->gps_status == true)){
+            this->gps_status = false; 
+            this->reset_LCD();
+            M5.Lcd.println("GPS OFF");
         }
 
         M5.IMU.getAhrsData(&this->gyro_X, &this->gyro_Y, &this->gyro_Z, &this->accel_X, &this->accel_Y, &this->accel_Z, &this->pitch, &this->roll, &this->yaw);
@@ -121,14 +136,17 @@ const char *M5_Manager::get_current_time()
 bool M5_Manager::connect_wifi()
 {
     WiFi.begin(this->ssid, this->password);
+    M5.Lcd.print("Connecting to WiFi");
     if (this->logger_manager_ptr != NULL)
         this->logger_manager_ptr->info("[M5_Manager] Connecting to WiFi");
     while (WiFi.status() != WL_CONNECTED)
     {
         vTaskDelay(1000);
+        M5.Lcd.print(".");
         if (this->logger_manager_ptr != NULL)
             this->logger_manager_ptr->info("[M5_Manager] Connecting to WiFi...");
     }
+    M5.Lcd.println("Connected to WiFi");
     if (this->logger_manager_ptr != NULL)
         this->logger_manager_ptr->info("[M5_Manager] Connected to WiFi");
 
@@ -140,13 +158,19 @@ void M5_Manager::update_unix_time()
 {
     struct tm timeinfo;
     if (!getLocalTime(&timeinfo))
-    {
+    {   
+        M5.Lcd.println("Failed to obtain time");
+        M5.Lcd.println("Rebooting in 5s");
         if (this->logger_manager_ptr != NULL)
             this->logger_manager_ptr->error("[M5_Manager] Failed to obtain time");
-        return;
+        vTaskDelay(5000);
+        exit(-1);
     }
     this->now = mktime(&timeinfo);
-    if (this->logger_manager_ptr != NULL)
+    if (this->logger_manager_ptr != NULL){
         this->logger_manager_ptr->info("[M5_Manager] Unix Time: " + String(now));
+         
+    }
+    M5.Lcd.println("Unix Time: " + String(now));
     micros_now = esp_timer_get_time();
 }

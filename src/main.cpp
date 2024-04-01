@@ -19,7 +19,7 @@ SemaphoreHandle_t xSemaphore_Uploader = NULL;
 Logger_Manager logger_manager(INFO);
 M5_Manager m5_manager(&logger_manager);
 Collector_Manager collector_manager(&logger_manager, &xMutex, &xSemaphore);
-Uploader_Manager uploader_manager("http://d627-177-92-54-149.ngrok-free.app", &logger_manager, &xMutex, &xSemaphore_Uploader);
+Uploader_Manager uploader_manager("http://bbad-177-92-54-149.ngrok-free.app", &logger_manager, &xMutex, &xSemaphore_Uploader);
 SD_Manager sd_manager(&logger_manager, &m5_manager, &collector_manager, &uploader_manager, &xMutex, &xSemaphore, &xSemaphore_Uploader);
 
 TickType_t lastWakeTime = xTaskGetTickCount();
@@ -34,7 +34,9 @@ void setup()
     xSemaphore_Uploader = xSemaphoreCreateBinary();
 
     sd_manager.set_logger_manager(&logger_manager);
-    m5_manager.M5_begin(false, false, false, false);
+    m5_manager.M5_begin(true, false, false, false);
+    m5_manager.reset_LCD();
+    M5.Lcd.println("Initializing...");
     m5_manager.connect_wifi();
     m5_manager.update_unix_time();
     // uploader_manager.get_alive();
@@ -47,6 +49,9 @@ void setup()
     log_d("Free heap: %d", ESP.getFreeHeap());
     log_d("Total PSRAM: %d", ESP.getPsramSize());
     log_d("Free PSRAM: %d", ESP.getFreePsram());
+    M5.Lcd.println("Starting the data collection");
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    m5_manager.reset_LCD();
     if (m5_manager.create_tasks())
         logger_manager.info("M5 manager Tasks created");
 
