@@ -47,36 +47,36 @@ void M5_Manager::update_mpu_data(void *z)
     M5.Lcd.println("GPS OFF");
     for (;;)
     {
-        while (Serial2.available() > 0)
-        {
+        // while (Serial2.available() > 0)
+        // {
 
-            gps.encode(Serial2.read());
-            if (gps.location.isUpdated())
-            {
-                Latitude = gps.location.lat();
-                Longitude = gps.location.lng();
-                Altitude = gps.altitude.meters();
-                Speed = gps.speed.kmph();
-                GPS_last_seen = esp_timer_get_time();
-                if(this->gps_status == false){
-                    this->gps_status = true;
-                    this->reset_LCD();
-                    M5.Lcd.println("GPS ON");
-                }
+        //     gps.encode(Serial2.read());
+        //     if (gps.location.isUpdated())
+        //     {
+        //         Latitude = gps.location.lat();
+        //         Longitude = gps.location.lng();
+        //         Altitude = gps.altitude.meters();
+        //         Speed = gps.speed.kmph();
+        //         GPS_last_seen = esp_timer_get_time();
+        //         if(this->gps_status == false){
+        //             this->gps_status = true;
+        //             this->reset_LCD();
+        //             M5.Lcd.println("GPS ON");
+        //         }
                 
-            }
-            else{
-                Latitude = 0.0F;
-                Longitude = 0.0F;
-                Altitude = 0.0F;
-                Speed = 0.0F;
-            }
-        }
-        if((this->GPS_last_seen < esp_timer_get_time() - 2000000) && (this->gps_status == true)){
-            this->gps_status = false; 
-            this->reset_LCD();
-            M5.Lcd.println("GPS OFF");
-        }
+        //     }
+        //     else{
+        //         Latitude = 0.0F;
+        //         Longitude = 0.0F;
+        //         Altitude = 0.0F;
+        //         Speed = 0.0F;
+        //     }
+        // }
+        // if((this->GPS_last_seen < esp_timer_get_time() - 2000000) && (this->gps_status == true)){
+        //     this->gps_status = false; 
+        //     this->reset_LCD();
+        //     M5.Lcd.println("GPS OFF");
+        // }
 
         M5.IMU.getAhrsData(&this->gyro_X, &this->gyro_Y, &this->gyro_Z, &this->accel_X, &this->accel_Y, &this->accel_Z, &this->pitch, &this->roll, &this->yaw);
         M5.IMU.getTempData(&this->temperature);
@@ -135,7 +135,7 @@ const char *M5_Manager::get_current_time()
 
 bool M5_Manager::connect_wifi()
 {
-    WiFi.begin(this->ssid, this->password);
+    WiFi.begin(this->ssid.c_str(), this->password.c_str());
     M5.Lcd.print("Connecting to WiFi");
     if (this->logger_manager_ptr != NULL)
         this->logger_manager_ptr->info("[M5_Manager] Connecting to WiFi");

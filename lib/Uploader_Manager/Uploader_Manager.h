@@ -38,8 +38,10 @@ public:
     void alloc_buffers(){ 
         buffer = (uint8_t*) heap_caps_malloc(Buffer_size+4, MALLOC_CAP_SPIRAM);
     }
+    bool post_file_buffer(String file_name, uint8_t *buffer);
     uint8_t *buffer = NULL;
 private: 
+    bool connect_status = false;
     bool is_task_created = false;
 
     SemaphoreHandle_t* xMutex;

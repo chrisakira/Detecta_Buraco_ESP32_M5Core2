@@ -13,7 +13,8 @@
 #include "Logger_Manager.h"
 class M5_Manager {
 public:
-    M5_Manager(Logger_Manager *logger_manager_ptr): logger_manager_ptr(logger_manager_ptr){}
+    M5_Manager(Logger_Manager *logger_manager_ptr, String ssid = "Perdi", String password = "Perdi"): 
+    logger_manager_ptr(logger_manager_ptr), ssid(ssid), password(password) {}
 
     ~M5_Manager(){}
 
@@ -65,8 +66,8 @@ private:
     static const uint32_t GPSBaud = 9600;
 
     TinyGPSPlus gps; 
-    const char* ssid             = "Perdi";
-    const char* password         = "GETWICKED";
+    String ssid;
+    String password;
     const char* ntpServer        = "pool.ntp.org"; 
     const long gmtOffset_sec     = -10800; // GMT offset for Sao Paulo (UTC-3)
     const int daylightOffset_sec = 3600;

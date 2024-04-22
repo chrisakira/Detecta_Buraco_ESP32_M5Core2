@@ -16,14 +16,14 @@ SemaphoreHandle_t xMutex = NULL;
 SemaphoreHandle_t xSemaphore = NULL;
 SemaphoreHandle_t xSemaphore_Uploader = NULL;
 
-Logger_Manager logger_manager(INFO);
-M5_Manager m5_manager(&logger_manager);
+Logger_Manager logger_manager(DEBUG);
+M5_Manager m5_manager(&logger_manager, "Maekawa", "GETWICKED");
 Collector_Manager collector_manager(&logger_manager, &xMutex, &xSemaphore);
-Uploader_Manager uploader_manager("http://bbad-177-92-54-149.ngrok-free.app", &logger_manager, &xMutex, &xSemaphore_Uploader);
+Uploader_Manager uploader_manager("http://www.akira-maker.com/iot", &logger_manager, &xMutex, &xSemaphore_Uploader);
 SD_Manager sd_manager(&logger_manager, &m5_manager, &collector_manager, &uploader_manager, &xMutex, &xSemaphore, &xSemaphore_Uploader);
 
 TickType_t lastWakeTime = xTaskGetTickCount();
-const TickType_t interval = pdMS_TO_TICKS(5);
+const TickType_t interval = pdMS_TO_TICKS(1);
 void displayInfo();
 
 void setup()
@@ -44,12 +44,11 @@ void setup()
     sd_manager.erase_all_files();
     uploader_manager.alloc_buffers();
     collector_manager.alloc_buffers();
-
-    log_d("Total heap: %d", ESP.getHeapSize());
-    log_d("Free heap: %d", ESP.getFreeHeap());
-    log_d("Total PSRAM: %d", ESP.getPsramSize());
-    log_d("Free PSRAM: %d", ESP.getFreePsram());
-    M5.Lcd.println("Starting the data collection");
+    Serial.printf("Total heap: %d\n", ESP.getHeapSize());
+    Serial.printf("Free heap: %d\n", ESP.getFreeHeap());
+    Serial.printf("Total PSRAM: %d\n", ESP.getPsramSize());
+    Serial.printf("Free PSRAM: %d\n", ESP.getFreePsram());
+    Serial.println("Starting the data collection");
     vTaskDelay(2000 / portTICK_PERIOD_MS);
     m5_manager.reset_LCD();
     if (m5_manager.create_tasks())
@@ -85,6 +84,13 @@ void loop()
     float pitch = m5_manager.pitch;
     float roll = m5_manager.roll;
     float yaw = m5_manager.yaw;
+    float acc_x = m5_manager.accel_X;
+    float acc_y = m5_manager.accel_Y;
+    float acc_z = m5_manager.accel_Z;
+    float gyro_x = m5_manager.gyro_X;
+    float gyro_y = m5_manager.gyro_Y;
+    float gyro_z = m5_manager.gyro_Z;
+
     double Latitude = m5_manager.Latitude;
     double Longitude = m5_manager.Longitude;
     double Altitude = m5_manager.Altitude;
@@ -93,20 +99,32 @@ void loop()
 
     uint_fast64_t timestamp = ((uint_fast64_t)m5_manager.now) * 1000000 + (esp_timer_get_time() - m5_manager.micros_now);
     collector_manager.add_sample(pitch, 0, timestamp);
-    collector_manager.add_sample(roll, 1, timestamp);
-    collector_manager.add_sample(yaw, 2, timestamp);
-    if(Latitude != 0.0F)
-        collector_manager.add_sample(Latitude, 3, timestamp);
+    delayMicroseconds(500);
 
-    if(Longitude != 0.0F)
-        collector_manager.add_sample(Longitude, 4, timestamp);
+    timestamp = ((uint_fast64_t)m5_manager.now) * 1000000 + (esp_timer_get_time() - m5_manager.micros_now);
+    collector_manager.add_sample(pitch, 0, timestamp);
+    // collector_manager.add_sample(roll, 1, timestamp);
+    // collector_manager.add_sample(yaw, 2, timestamp);
     
-    if(Altitude != 0.0F)
-        collector_manager.add_sample(Altitude, 5, timestamp);
+    // collector_manager.add_sample(acc_x, 3, timestamp);
+    // collector_manager.add_sample(acc_y, 4, timestamp);
+    // collector_manager.add_sample(acc_z, 5, timestamp);
+
+    // collector_manager.add_sample(gyro_x, 6, timestamp);
+    // collector_manager.add_sample(gyro_y, 7, timestamp);
+    // collector_manager.add_sample(gyro_z, 8, timestamp);
+    // if(Latitude != 0.0F)
+    //     collector_manager.add_sample(Latitude, 3, timestamp);
+
+    // if(Longitude != 0.0F)
+    //     collector_manager.add_sample(Longitude, 4, timestamp);
     
-    if(Speed != 0.0F)
-        collector_manager.add_sample(Speed, 6, timestamp);
-        
+    // if(Altitude != 0.0F)
+    //     collector_manager.add_sample(Altitude, 5, timestamp);
+    
+    // if(Speed != 0.0F)
+    //     collector_manager.add_sample(Speed, 6, timestamp);
+    
     vTaskDelayUntil(&lastWakeTime, interval);
 }
 

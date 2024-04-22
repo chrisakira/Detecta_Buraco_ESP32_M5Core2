@@ -26,15 +26,18 @@ void Collector_Manager::add_sample(const double value_, const int measurement_, 
         }
     if (this->j >= (Buffer_size))
     {
-        this->j = 0;
-        Serial.print("\nBuffer Collected: ");        
-        xSemaphoreTake(*this->xMutex, portMAX_DELAY);
+        this->j = 0;    
+        while(xSemaphoreTake(*this->xMutex, portMAX_DELAY) != pdTRUE) {
+        }
+        
         for ( size_t i = 0; i < Buffer_size; i++)
         {
             this->buffer_write[i] = this->buffer_read[i];
         }
-        //memcpy(this->buffer_write, this->buffer_read, sizeof(Buffer_size)); //Num consegue né
-          
+        this->buffer_write[Buffer_size+1] = '#';
+        this->buffer_write[Buffer_size+2] = 'E';
+        this->buffer_write[Buffer_size+3] = 'O';
+        this->buffer_write[Buffer_size+4] = 'F';
         xSemaphoreGive(*this->xMutex);
         xSemaphoreGive(*this->xSemaphore);
         this->logger_manager_ptr->debug("[Collector_Manager.cpp] Buffer ready");

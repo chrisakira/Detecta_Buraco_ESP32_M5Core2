@@ -29,7 +29,7 @@ bool Uploader_Manager::post_file(String file_path, SdFat *SDfat)
     String file_header = "attachment; filename= " + file_path;
     this->http.begin(this->post_file_url);
     this->http.addHeader("Content-Type", "application/octet-stream");
-    this->http.addHeader("Authorization", "ksaldkalskd");
+    this->http.addHeader("Authorization", "F4ujtjaC7vgFE4oowrgc8Pd6WbT");
     this->http.addHeader("Cookie", "device=" + WiFi.macAddress()); 
     this->http.addHeader("Content-Disposition", file_header.c_str());
     file_path = "/" + file_path;    
@@ -43,6 +43,28 @@ bool Uploader_Manager::post_file(String file_path, SdFat *SDfat)
         http.sendRequest("POST", buffer, bytesRead);
 
     this->http.end();
+    return true;
+}
+
+bool Uploader_Manager::post_file_buffer(String file_name, uint8_t *buffer)
+{
+    
+    if (WiFi.status() != WL_CONNECTED)
+        return false;
+
+    if(this->connect_status == false){
+        String file_header = "attachment; filename= " + file_name;
+        this->connect_status = true;
+        this->http.begin(this->post_file_url);
+        this->http.addHeader("Content-Type", "application/octet-stream");
+        this->http.addHeader("Authorization", "F4ujtjaC7vgFE4oowrgc8Pd6WbT");
+        this->http.addHeader("Cookie", "device=08:3A:F2:66:B9:D8"); 
+        this->http.addHeader("Content-Disposition", file_header.c_str());
+    }
+
+    this->http.sendRequest("POST", buffer,  Buffer_size+4);
+
+    // this->http.end();
     return true;
 }
 
