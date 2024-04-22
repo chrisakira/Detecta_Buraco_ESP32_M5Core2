@@ -17,13 +17,13 @@ SemaphoreHandle_t xSemaphore = NULL;
 SemaphoreHandle_t xSemaphore_Uploader = NULL;
 
 Logger_Manager logger_manager(DEBUG);
-M5_Manager m5_manager(&logger_manager, "Maekawa", "GETWICKED");
+M5_Manager m5_manager(&logger_manager, "Perdi", "GETWICKED");
 Collector_Manager collector_manager(&logger_manager, &xMutex, &xSemaphore);
 Uploader_Manager uploader_manager("http://www.akira-maker.com/iot", &logger_manager, &xMutex, &xSemaphore_Uploader);
 SD_Manager sd_manager(&logger_manager, &m5_manager, &collector_manager, &uploader_manager, &xMutex, &xSemaphore, &xSemaphore_Uploader);
 
 TickType_t lastWakeTime = xTaskGetTickCount();
-const TickType_t interval = pdMS_TO_TICKS(1);
+const TickType_t interval = pdMS_TO_TICKS(10);
 void displayInfo();
 
 void setup()
@@ -99,31 +99,28 @@ void loop()
 
     uint_fast64_t timestamp = ((uint_fast64_t)m5_manager.now) * 1000000 + (esp_timer_get_time() - m5_manager.micros_now);
     collector_manager.add_sample(pitch, 0, timestamp);
-    delayMicroseconds(500);
-
-    timestamp = ((uint_fast64_t)m5_manager.now) * 1000000 + (esp_timer_get_time() - m5_manager.micros_now);
-    collector_manager.add_sample(pitch, 0, timestamp);
-    // collector_manager.add_sample(roll, 1, timestamp);
-    // collector_manager.add_sample(yaw, 2, timestamp);
+    collector_manager.add_sample(roll, 1, timestamp);
+    collector_manager.add_sample(yaw, 2, timestamp);
     
-    // collector_manager.add_sample(acc_x, 3, timestamp);
-    // collector_manager.add_sample(acc_y, 4, timestamp);
-    // collector_manager.add_sample(acc_z, 5, timestamp);
+    collector_manager.add_sample(acc_x, 3, timestamp);
+    collector_manager.add_sample(acc_y, 4, timestamp);
+    collector_manager.add_sample(acc_z, 5, timestamp);
 
-    // collector_manager.add_sample(gyro_x, 6, timestamp);
-    // collector_manager.add_sample(gyro_y, 7, timestamp);
-    // collector_manager.add_sample(gyro_z, 8, timestamp);
-    // if(Latitude != 0.0F)
-    //     collector_manager.add_sample(Latitude, 3, timestamp);
+    collector_manager.add_sample(gyro_x, 6, timestamp);
+    collector_manager.add_sample(gyro_y, 7, timestamp);
+    collector_manager.add_sample(gyro_z, 8, timestamp);
+    
+    if(Latitude != 0.0F)
+        collector_manager.add_sample(Latitude, 9, timestamp);
 
-    // if(Longitude != 0.0F)
-    //     collector_manager.add_sample(Longitude, 4, timestamp);
+    if(Longitude != 0.0F)
+        collector_manager.add_sample(Longitude, 10, timestamp);
     
-    // if(Altitude != 0.0F)
-    //     collector_manager.add_sample(Altitude, 5, timestamp);
+    if(Altitude != 0.0F)
+        collector_manager.add_sample(Altitude, 11, timestamp);
     
-    // if(Speed != 0.0F)
-    //     collector_manager.add_sample(Speed, 6, timestamp);
+    if(Speed != 0.0F)
+        collector_manager.add_sample(Speed, 12, timestamp);
     
     vTaskDelayUntil(&lastWakeTime, interval);
 }
