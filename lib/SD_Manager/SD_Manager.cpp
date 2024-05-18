@@ -5,13 +5,13 @@ void SD_Manager::sd_writer(void *z)
     uint64_t timer_write = 0;
     sprintf(filename, "%s%s", m5_manager_ptr->get_current_time(), "not-ready.aki");
     sprintf(filename_ready, "%s%s", m5_manager_ptr->get_current_time(), ".aki");
-    if (myFile.open(filename, O_WRITE | O_CREAT))
-        logger_manager_ptr->debug("[SD_Manager.cpp] Started to write");
-    else
-    {
-        logger_manager_ptr->critical("[SD_Manager.cpp] File not opened");
-        exit(-1);
-    }
+    // if (myFile.open(filename, O_WRITE | O_CREAT))
+    //     logger_manager_ptr->debug("[SD_Manager.cpp] Started to write");
+    // else
+    // {
+    //     logger_manager_ptr->critical("[SD_Manager.cpp] File not opened");
+    //     exit(-1);
+    // }
     for (;;)
     {
         if (xSemaphoreTake(*this->xSemaphore, portMAX_DELAY) == pdTRUE)
